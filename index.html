@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2D8FC6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kasubha Hub">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<title>Kasubha Hub</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --blue:#2D8FC6;
+  --blue-dim:rgba(45,143,198,0.12);
+  --blue-dark:#1a6a9a;
+  --bg:#f1f5f9;
+  --surface:#ffffff;
+  --surface2:#f8fafc;
+  --border:#e2e8f0;
+  --text:#0f172a;
+  --muted:#64748b;
+  --sidebar-bg:#0d1b2a;
+  --sidebar-text:#94a3b8;
+  --sidebar-hover:rgba(255,255,255,0.06);
+  --sidebar-active-bg:rgba(45,143,198,0.18);
+  --sidebar-active:#2D8FC6;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg:0 12px 30px rgba(0,0,0,0.14);
+  --radius:10px;
+  --t:.18s ease;
+  --sidebar-w:220px;
+  --header-h:56px;
+  --tab-h:44px;
+}
+
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#080f1a;
+    --surface:#0d1b2a;
+    --surface2:#132030;
+    --border:#1e3a5f;
+    --text:#e2e8f0;
+    --muted:#94a3b8;
+    --sidebar-bg:#060d18;
+  }
+}
+
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;overflow:hidden;}
+
+/* ── LAYOUT ── */
+#app{display:flex;height:100dvh;overflow:hidden;}
+
+.sidebar{
+  width:var(--sidebar-w);
+  background:var(--sidebar-bg);
+  display:flex;
+  flex-direction:column;
+  flex-shrink:0;
+  overflow-y:auto;
+  scrollbar-width:none;
+}
+.sidebar::-webkit-scrollbar{display:none;}
+
+.right-panel{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+
+.app-header{
+  display:none;
+  align-items:center;
+  justify-content:space-between;
+  height:var(--header-h);
+  padding:0 16px;
+  background:var(--sidebar-bg);
+  color:#fff;
+  font-weight:700;
+  font-size:1rem;
+  flex-shrink:0;
+}
+.app-header .brand span{color:var(--blue);}
+
+.tab-strip{
+  display:none;
+  overflow-x:auto;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.tab-strip::-webkit-scrollbar{display:none;}
+.tab-strip-inner{display:flex;padding:0 8px;}
+
+.tab-btn{
+  padding:0 18px;
+  height:var(--tab-h);
+  font-size:0.85rem;
+  font-weight:600;
+  color:var(--muted);
+  border:none;
+  background:none;
+  cursor:pointer;
+  border-bottom:2.5px solid transparent;
+  white-space:nowrap;
+  transition:color var(--t),border-color var(--t);
+}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+.main-scroll{flex:1;overflow-y:auto;overflow-x:hidden;}
+
+/* Sidebar overlay */
+.sb-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);
+  z-index:199;
+}
+.sb-overlay.open{display:block;}
+
+/* ── SIDEBAR CONTENT ── */
+.sidebar-brand{
+  padding:20px 16px 14px;
+  font-size:1rem;
+  font-weight:700;
+  color:#fff;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+  margin-bottom:8px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.sidebar-brand span{color:var(--blue);}
+.sidebar-brand svg{width:28px;height:28px;flex-shrink:0;}
+
+.nav-group{padding:0 8px;margin-bottom:4px;}
+.nav-label{
+  font-size:0.68rem;
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,0.28);
+  padding:10px 8px 4px;
+}
+.nav-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 12px;
+  border-radius:7px;
+  color:var(--sidebar-text);
+  text-decoration:none;
+  font-size:0.875rem;
+  font-weight:500;
+  cursor:pointer;
+  user-select:none;
+  transition:background var(--t),color var(--t);
+}
+.nav-item:hover{background:var(--sidebar-hover);color:#e2e8f0;}
+.nav-item.active{background:var(--sidebar-active-bg);color:var(--sidebar-active);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+
+/* ── TAB PANES ── */
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+.pane-inner{max-width:900px;margin:0 auto;padding:28px 24px;}
+
+.pane-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.pane-header h1{font-size:1.45rem;font-weight:700;letter-spacing:-0.02em;}
+.pane-sub{font-size:0.82rem;color:var(--muted);margin-top:2px;}
+.pane-header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+/* ── TODO ── */
+.add-row{display:flex;gap:8px;margin-bottom:14px;}
+
+.task-input{
+  flex:1;
+  padding:10px 14px;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  font-size:0.9rem;
+  background:var(--surface);
+  color:var(--text);
+  outline:none;
+  transition:border-color var(--t);
+  font-family:inherit;
+}
+.task-input:focus{border-color:var(--blue);}
+.task-input::placeholder{color:var(--muted);}
+
+.todo-list{display:flex;flex-direction:column;gap:6px;}
+
+.todo-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  transition:opacity var(--t);
+}
+.todo-item.done{opacity:.5;}
+
+.todo-label{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex:1;
+  cursor:pointer;
+  min-width:0;
+}
+.todo-label input[type=checkbox]{
+  width:17px;height:17px;
+  accent-color:var(--blue);
+  cursor:pointer;flex-shrink:0;
+}
+.todo-text{font-size:0.9rem;word-break:break-word;}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--muted);}
+
+.empty-state{
+  text-align:center;
+  padding:48px 16px;
+  color:var(--muted);
+  font-size:0.9rem;
+}
+
+/* ── WEBSITES ── */
+.filter-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+
+.filter-btn{
+  padding:4px 12px;
+  border-radius:20px;
+  border:1.5px solid var(--border);
+  background:none;
+  font-size:0.75rem;
+  font-weight:600;
+  color:var(--muted);
+  cursor:pointer;
+  transition:all var(--t);
+}
+.filter-btn:hover,.filter-btn.active{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+
+.site-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:16px;
+}
+
+.site-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  transition:box-shadow var(--t);
+}
+.site-card:hover{box-shadow:var(--shadow-md);}
+
+.site-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.site-name{font-size:0.95rem;font-weight:700;letter-spacing:-0.01em;}
+.site-url{
+  font-size:0.75rem;
+  color:var(--blue);
+  text-decoration:none;
+  word-break:break-all;
+  display:block;
+  margin-top:2px;
+}
+.site-url:hover{text-decoration:underline;}
+
+.status-pill{
+  font-size:0.7rem;
+  font-weight:600;
+  padding:3px 10px;
+  border-radius:20px;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}
+.meta-item{font-size:0.76rem;}
+.meta-item strong{display:block;font-size:0.67rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:1px;}
+.meta-item span{color:var(--text);font-weight:500;}
+
+.github-link{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:0.75rem;
+  color:var(--muted);
+  text-decoration:none;
+  word-break:break-all;
+}
+.github-link:hover{color:var(--text);}
+.github-link svg{width:13px;height:13px;flex-shrink:0;}
+
+.site-notes{
+  font-size:0.78rem;
+  color:var(--muted);
+  line-height:1.45;
+  border-top:1px solid var(--border);
+  padding-top:8px;
+}
+
+.card-actions{
+  display:flex;
+  gap:8px;
+  margin-top:auto;
+  padding-top:8px;
+  border-top:1px solid var(--border);
+}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:9px 18px;
+  border-radius:8px;
+  font-size:0.85rem;
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+  transition:all var(--t);
+  text-decoration:none;
+  font-family:inherit;
+  white-space:nowrap;
+}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:var(--blue-dark);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--border);}
+.btn-ghost{background:none;color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);background:var(--surface2);}
+.btn-danger-soft{background:#fef2f2;color:#ef4444;border:1px solid #fecaca;}
+.btn-danger-soft:hover{background:#fee2e2;}
+.btn-sm{padding:5px 12px;font-size:0.78rem;border-radius:6px;}
+.btn-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:7px;
+  border:none;background:none;cursor:pointer;
+  color:var(--muted);transition:all var(--t);flex-shrink:0;
+}
+.btn-icon:hover{background:var(--surface2);color:var(--text);}
+.btn-icon.del:hover{background:#fef2f2;color:#ef4444;}
+.btn-icon svg{width:17px;height:17px;}
+.btn-text{
+  background:none;border:none;cursor:pointer;
+  font-size:0.8rem;color:var(--muted);
+  text-decoration:underline;font-family:inherit;
+}
+.btn-text:hover{color:var(--text);}
+
+/* ── MODAL ── */
+.modal-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.55);
+  z-index:400;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+}
+.modal-overlay.open{display:flex;}
+
+.modal{
+  background:var(--surface);
+  border-radius:14px;
+  width:100%;
+  max-width:580px;
+  max-height:92dvh;
+  display:flex;
+  flex-direction:column;
+  box-shadow:var(--shadow-lg);
+}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 14px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.modal-head h2{font-size:1.05rem;font-weight:700;}
+.modal-close{
+  width:30px;height:30px;border-radius:50%;
+  border:none;background:var(--surface2);
+  cursor:pointer;font-size:1.3rem;line-height:1;
+  color:var(--muted);display:flex;align-items:center;justify-content:center;
+  font-family:inherit;
+}
+.modal-close:hover{background:var(--border);}
+.modal-body{padding:20px;overflow-y:auto;flex:1;}
+.modal-foot{
+  display:flex;gap:10px;justify-content:flex-end;
+  padding:14px 20px;
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.full{grid-column:1/-1;}
+
+label{font-size:0.75rem;font-weight:600;color:var(--muted);letter-spacing:0.02em;}
+
+input[type=text],input[type=url],select,textarea{
+  padding:9px 12px;
+  border:1.5px solid var(--border);
+  border-radius:7px;
+  font-size:0.875rem;
+  background:var(--surface);
+  color:var(--text);
+  outline:none;
+  transition:border-color var(--t);
+  font-family:inherit;
+  width:100%;
+}
+input[type=text]:focus,input[type=url]:focus,select:focus,textarea:focus{border-color:var(--blue);}
+input::placeholder,textarea::placeholder{color:var(--muted);}
+select{cursor:pointer;appearance:auto;}
+textarea{resize:vertical;min-height:72px;line-height:1.5;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:767px){
+  body{overflow:auto;}
+  #app{overflow:visible;height:auto;flex-direction:column;}
+
+  .sidebar{
+    position:fixed;
+    top:0;left:0;bottom:0;
+    z-index:200;
+    width:260px;
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+  }
+  .sidebar.open{transform:translateX(0);}
+
+  .right-panel{min-height:100dvh;overflow:visible;}
+  .main-scroll{overflow:visible;flex:none;}
+  .app-header{display:flex;}
+  .tab-strip{display:block;}
+
+  .pane-inner{padding:16px;}
+  .pane-header h1{font-size:1.2rem;}
+  .site-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .fg.full{grid-column:1;}
+
+  .modal-overlay{align-items:flex-end;padding:0;}
+  .modal{border-radius:14px 14px 0 0;max-height:95dvh;max-width:100%;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="100" height="100" rx="18" fill="#2D8FC6"/>
+        <path d="M28 24h12v20l16-20h15L51 50l22 26H57L41 55v21H28V24z" fill="white"/>
+      </svg>
+      Kasubha <span>Hub</span>
+    </div>
+    <nav>
+      <div class="nav-group">
+        <p class="nav-label">Todos</p>
+        <a class="nav-item active" data-tab="daily" href="#" onclick="nav('daily');return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Daily
+        </a>
+        <a class="nav-item" data-tab="weekly" href="#" onclick="nav('weekly');return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M7 15h10"/></svg>
+          Weekly
+        </a>
+        <a class="nav-item" data-tab="monthly" href="#" onclick="nav('monthly');return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="16" r="2" fill="currentColor" stroke="none"/></svg>
+          Monthly
+        </a>
+        <a class="nav-item" data-tab="yearly" href="#" onclick="nav('yearly');return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.5 7.5H22l-6.5 4.7 2.5 7.6L12 17.3l-6 4.5 2.5-7.6L2 9.5h7.5z"/></svg>
+          Yearly
+        </a>
+      </div>
+      <div class="nav-group">
+        <p class="nav-label">Websites</p>
+        <a class="nav-item" data-tab="personal" href="#" onclick="nav('personal');return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c-3.5 4-3.5 16 0 20M12 2c3.5 4 3.5 16 0 20"/></svg>
+          Personal
+        </a>
+        <a class="nav-item" data-tab="ngo" href="#" onclick="nav('ngo');return false;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          NGO
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="right-panel">
+
+    <!-- Mobile header -->
+    <header class="app-header" id="app-header">
+      <div class="brand">Kasubha <span>Hub</span></div>
+      <button class="btn-icon" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </header>
+
+    <!-- Mobile tab strip -->
+    <div class="tab-strip" id="tab-strip">
+      <div class="tab-strip-inner" id="tab-strip-inner"></div>
+    </div>
+
+    <!-- Scrollable content -->
+    <main class="main-scroll" id="main-scroll">
+
+      <!-- Daily -->
+      <div id="pane-daily" class="tab-pane active">
+        <div class="pane-inner">
+          <div class="pane-header">
+            <div>
+              <h1>Daily Tasks</h1>
+              <p class="pane-sub" id="count-daily">0 remaining</p>
+            </div>
+            <div class="pane-header-right">
+              <button class="btn-text" onclick="clearDone('daily')">Clear completed</button>
+            </div>
+          </div>
+          <div class="add-row">
+            <input type="text" id="input-daily" class="task-input" placeholder="Add a task and press Enter…">
+            <button class="btn btn-primary" onclick="addFromInput('daily')">Add</button>
+          </div>
+          <div class="todo-list" id="todos-daily"></div>
+        </div>
+      </div>
+
+      <!-- Weekly -->
+      <div id="pane-weekly" class="tab-pane">
+        <div class="pane-inner">
+          <div class="pane-header">
+            <div>
+              <h1>Weekly Tasks</h1>
+              <p class="pane-sub" id="count-weekly">0 remaining</p>
+            </div>
+            <div class="pane-header-right">
+              <button class="btn-text" onclick="clearDone('weekly')">Clear completed</button>
+            </div>
+          </div>
+          <div class="add-row">
+            <input type="text" id="input-weekly" class="task-input" placeholder="Add a task and press Enter…">
+            <button class="btn btn-primary" onclick="addFromInput('weekly')">Add</button>
+          </div>
+          <div class="todo-list" id="todos-weekly"></div>
+        </div>
+      </div>
+
+      <!-- Monthly -->
+      <div id="pane-monthly" class="tab-pane">
+        <div class="pane-inner">
+          <div class="pane-header">
+            <div>
+              <h1>Monthly Tasks</h1>
+              <p class="pane-sub" id="count-monthly">0 remaining</p>
+            </div>
+            <div class="pane-header-right">
+              <button class="btn-text" onclick="clearDone('monthly')">Clear completed</button>
+            </div>
+          </div>
+          <div class="add-row">
+            <input type="text" id="input-monthly" class="task-input" placeholder="Add a task and press Enter…">
+            <button class="btn btn-primary" onclick="addFromInput('monthly')">Add</button>
+          </div>
+          <div class="todo-list" id="todos-monthly"></div>
+        </div>
+      </div>
+
+      <!-- Yearly -->
+      <div id="pane-yearly" class="tab-pane">
+        <div class="pane-inner">
+          <div class="pane-header">
+            <div>
+              <h1>Yearly Goals</h1>
+              <p class="pane-sub" id="count-yearly">0 remaining</p>
+            </div>
+            <div class="pane-header-right">
+              <button class="btn-text" onclick="clearDone('yearly')">Clear completed</button>
+            </div>
+          </div>
+          <div class="add-row">
+            <input type="text" id="input-yearly" class="task-input" placeholder="Add a goal and press Enter…">
+            <button class="btn btn-primary" onclick="addFromInput('yearly')">Add</button>
+          </div>
+          <div class="todo-list" id="todos-yearly"></div>
+        </div>
+      </div>
+
+      <!-- Personal Websites -->
+      <div id="pane-personal" class="tab-pane">
+        <div class="pane-inner">
+          <div class="pane-header">
+            <div>
+              <h1>Personal Websites</h1>
+              <p class="pane-sub" id="count-personal">0 sites</p>
+            </div>
+            <button class="btn btn-primary" onclick="openModal('personal')">+ Add Site</button>
+          </div>
+          <div class="filter-strip" id="filter-personal"></div>
+          <div class="site-grid" id="sites-personal"></div>
+        </div>
+      </div>
+
+      <!-- NGO Websites -->
+      <div id="pane-ngo" class="tab-pane">
+        <div class="pane-inner">
+          <div class="pane-header">
+            <div>
+              <h1>NGO Websites</h1>
+              <p class="pane-sub" id="count-ngo">0 sites</p>
+            </div>
+            <button class="btn btn-primary" onclick="openModal('ngo')">+ Add Site</button>
+          </div>
+          <div class="filter-strip" id="filter-ngo"></div>
+          <div class="site-grid" id="sites-ngo"></div>
+        </div>
+      </div>
+
+    </main><!-- /main-scroll -->
+  </div><!-- /right-panel -->
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <!-- ── WEBSITE MODAL ── -->
+  <div class="modal-overlay" id="site-modal" onclick="handleOverlayClick(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title">Add Website</h2>
+        <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+      </div>
+      <form id="site-form" onsubmit="submitSite(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="fg full">
+              <label for="f-name">Website / Project Name *</label>
+              <input type="text" id="f-name" name="name" required placeholder="e.g. Kasubha Tech">
+            </div>
+            <div class="fg full">
+              <label for="f-url">Live URL</label>
+              <input type="url" id="f-url" name="liveUrl" placeholder="https://example.com">
+            </div>
+            <div class="fg">
+              <label for="f-status">Status *</label>
+              <select id="f-status" name="status" required>
+                <option value="Not Started">Not Started</option>
+                <option value="In Progress" selected>In Progress</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="On Hold">On Hold</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label for="f-hosting">Hosting</label>
+              <select id="f-hosting" name="hosting">
+                <option value="">— Select —</option>
+                <option value="Azure SWA">Azure Static Web App</option>
+                <option value="GCP Cloud Run">GCP Cloud Run</option>
+                <option value="AWS">AWS</option>
+                <option value="Vercel">Vercel</option>
+                <option value="Netlify">Netlify</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label for="f-domain">Domain Provider</label>
+              <input type="text" id="f-domain" name="domainProvider" placeholder="e.g. Spaceship, GoDaddy">
+            </div>
+            <div class="fg">
+              <label for="f-vibe">Vibe Coding Partner</label>
+              <select id="f-vibe" name="vibeCodingPartner">
+                <option value="">— None —</option>
+                <option value="Claude">Claude</option>
+                <option value="Codex">Codex</option>
+                <option value="Claude + Codex">Claude + Codex</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="fg full">
+              <label for="f-github">GitHub URL / Repo</label>
+              <input type="text" id="f-github" name="githubUrl" placeholder="https://github.com/username/repo">
+            </div>
+            <div class="fg full">
+              <label for="f-poc">Point of Contact (POC)</label>
+              <input type="text" id="f-poc" name="poc" placeholder="e.g. Karthik">
+            </div>
+            <div class="fg full">
+              <label for="f-notes">Notes</label>
+              <textarea id="f-notes" name="notes" placeholder="Any context, links, or reminders…"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ── STORAGE ──
+const SK = {
+  daily:'hub:td', weekly:'hub:tw', monthly:'hub:tm', yearly:'hub:ty',
+  personal:'hub:sp', ngo:'hub:sn'
+};
+function load(k){try{return JSON.parse(localStorage.getItem(k)||'[]');}catch{return[];}}
+function store(k,d){localStorage.setItem(k,JSON.stringify(d));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function safeUrl(u){if(!u)return null;u=u.trim();return/^https?:\/\//i.test(u)?u:/^(github\.com|www\.)/i.test(u)?'https://'+u:null;}
+
+// ── TABS ──
+const TABS=[
+  {id:'daily',label:'Daily'},
+  {id:'weekly',label:'Weekly'},
+  {id:'monthly',label:'Monthly'},
+  {id:'yearly',label:'Yearly'},
+  {id:'personal',label:'Personal'},
+  {id:'ngo',label:'NGO'},
+];
+
+function buildStrip(){
+  document.getElementById('tab-strip-inner').innerHTML=
+    TABS.map(t=>`<button class="tab-btn${t.id===currentTab?' active':''}" data-tab="${t.id}" onclick="nav('${t.id}')">${t.label}</button>`).join('');
+}
+
+let currentTab='daily';
+function nav(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active',p.id===`pane-${tab}`));
+  document.querySelectorAll('[data-tab]').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));
+  closeSidebar();
+  if(tab==='personal'||tab==='ngo') renderSites(tab);
+}
+
+// ── SIDEBAR (mobile) ──
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sb-overlay').classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+}
+
+// ── TODOS ──
+function getTodos(p){return load(SK[p]);}
+function setTodos(p,d){store(SK[p],d);}
+
+function addFromInput(p){
+  const el=document.getElementById(`input-${p}`);
+  const text=el.value.trim();
+  if(!text){el.focus();return;}
+  const todos=getTodos(p);
+  todos.unshift({id:uid(),text,done:false,at:new Date().toISOString()});
+  setTodos(p,todos);
+  el.value='';
+  renderTodos(p);
+  el.focus();
+}
+
+function toggleTodo(p,id){
+  const todos=getTodos(p);
+  const t=todos.find(x=>x.id===id);
+  if(t)t.done=!t.done;
+  setTodos(p,todos);
+  renderTodos(p);
+}
+
+function deleteTodo(p,id){
+  setTodos(p,getTodos(p).filter(x=>x.id!==id));
+  renderTodos(p);
+}
+
+function clearDone(p){
+  setTodos(p,getTodos(p).filter(x=>!x.done));
+  renderTodos(p);
+}
+
+function renderTodos(p){
+  const todos=getTodos(p);
+  const list=document.getElementById(`todos-${p}`);
+  const cEl=document.getElementById(`count-${p}`);
+  if(!list)return;
+  const rem=todos.filter(t=>!t.done).length;
+  if(cEl)cEl.textContent=todos.length?`${rem} of ${todos.length} remaining`:'';
+  if(!todos.length){list.innerHTML='<p class="empty-state">Nothing here yet. Add a task above.</p>';return;}
+  list.innerHTML=todos.map(t=>`
+    <div class="todo-item${t.done?' done':''}">
+      <label class="todo-label">
+        <input type="checkbox" ${t.done?'checked':''} onchange="toggleTodo('${p}','${t.id}')">
+        <span class="todo-text">${esc(t.text)}</span>
+      </label>
+      <button class="btn-icon del" onclick="deleteTodo('${p}','${t.id}')" aria-label="Delete">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+// ── SITES ──
+const STATUSES=['Not Started','In Progress','Pending','Completed','On Hold'];
+const STATUS_STYLE={
+  'Not Started':{bg:'#f1f5f9',cl:'#64748b'},
+  'In Progress': {bg:'#eff6ff',cl:'#2D8FC6'},
+  'Pending':     {bg:'#fffbeb',cl:'#d97706'},
+  'Completed':   {bg:'#f0fdf4',cl:'#16a34a'},
+  'On Hold':     {bg:'#fff7ed',cl:'#ea580c'},
+};
+
+let editingId=null,editingType=null;
+const activeFilter={};
+
+function getSites(t){return load(SK[t]);}
+function setSites(t,d){store(SK[t],d);}
+
+function openModal(type,id=null){
+  editingId=id; editingType=type;
+  const form=document.getElementById('site-form');
+  form.dataset.type=type;
+  form.reset();
+  document.getElementById('modal-title').textContent=id?'Edit Website':'Add Website';
+  if(id){
+    const site=getSites(type).find(s=>s.id===id);
+    if(site){
+      Object.keys(site).forEach(k=>{
+        const el=form.elements[k];
+        if(el)el.value=site[k]||'';
+      });
+    }
+  }
+  document.getElementById('site-modal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('site-modal').classList.remove('open');
+  editingId=null; editingType=null;
+}
+function handleOverlayClick(e){if(e.target===e.currentTarget)closeModal();}
+
+function submitSite(e){
+  e.preventDefault();
+  const form=e.target;
+  const type=form.dataset.type;
+  const data=Object.fromEntries(new FormData(form));
+  const sites=getSites(type);
+  if(editingId){
+    const i=sites.findIndex(s=>s.id===editingId);
+    if(i>=0)sites[i]={...sites[i],...data};
+  }else{
+    sites.unshift({id:uid(),...data,type,at:new Date().toISOString()});
+  }
+  setSites(type,sites);
+  closeModal();
+  renderSites(type);
+}
+
+function deleteSite(type,id){
+  if(!confirm('Delete this entry?'))return;
+  setSites(type,getSites(type).filter(s=>s.id!==id));
+  renderSites(type);
+}
+
+function setFilter(type,status){
+  if(activeFilter[type]===status)delete activeFilter[type];
+  else activeFilter[type]=status;
+  renderSites(type);
+}
+
+function renderSites(type){
+  const all=getSites(type);
+  const cEl=document.getElementById(`count-${type}`);
+  if(cEl)cEl.textContent=`${all.length} site${all.length!==1?'s':''}`;
+
+  // Filter strip
+  const fEl=document.getElementById(`filter-${type}`);
+  if(fEl){
+    const cur=activeFilter[type];
+    fEl.innerHTML=
+      `<button class="filter-btn${!cur?' active':''}" onclick="(function(){delete activeFilter['${type}'];renderSites('${type}');})()">All</button>`+
+      STATUSES.map(s=>`<button class="filter-btn${cur===s?' active':''}" onclick="setFilter('${type}','${s}')">${s}</button>`).join('');
+  }
+
+  const cur=activeFilter[type];
+  const sites=cur?all.filter(s=>s.status===cur):all;
+  const grid=document.getElementById(`sites-${type}`);
+  if(!grid)return;
+
+  if(!sites.length){
+    grid.innerHTML=`<p class="empty-state">${all.length?'No sites match this filter.':'No websites tracked yet. Add one above.'}</p>`;
+    return;
+  }
+
+  grid.innerHTML=sites.map(s=>{
+    const st=STATUS_STYLE[s.status]||STATUS_STYLE['Not Started'];
+    const ghUrl=safeUrl(s.githubUrl);
+    const liveUrl=safeUrl(s.liveUrl);
+    return `
+    <div class="site-card">
+      <div class="site-card-top">
+        <div>
+          <div class="site-name">${esc(s.name)}</div>
+          ${liveUrl?`<a href="${esc(liveUrl)}" target="_blank" rel="noopener" class="site-url">${esc(s.liveUrl)}</a>`:''}
+        </div>
+        <span class="status-pill" style="background:${st.bg};color:${st.cl};">${esc(s.status)}</span>
+      </div>
+      <div class="meta-grid">
+        ${s.hosting?`<div class="meta-item"><strong>Hosting</strong><span>${esc(s.hosting)}</span></div>`:''}
+        ${s.domainProvider?`<div class="meta-item"><strong>Domain</strong><span>${esc(s.domainProvider)}</span></div>`:''}
+        ${s.vibeCodingPartner?`<div class="meta-item"><strong>AI Partner</strong><span>${esc(s.vibeCodingPartner)}</span></div>`:''}
+        ${s.poc?`<div class="meta-item"><strong>POC</strong><span>${esc(s.poc)}</span></div>`:''}
+      </div>
+      ${ghUrl?`<a href="${esc(ghUrl)}" target="_blank" rel="noopener" class="github-link">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.69c-2.78.61-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0 1 12 6.8c.85.004 1.7.115 2.5.337 1.9-1.29 2.74-1.02 2.74-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10.01 10.01 0 0 0 22 12c0-5.52-4.48-10-10-10z"/></svg>
+        ${esc(s.githubUrl)}
+      </a>`:''}
+      ${s.notes?`<div class="site-notes">${esc(s.notes)}</div>`:''}
+      <div class="card-actions">
+        <button class="btn btn-sm btn-secondary" onclick="openModal('${type}','${s.id}')">Edit</button>
+        <button class="btn btn-sm btn-danger-soft" onclick="deleteSite('${type}','${s.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── SEED DATA ──
+function seed(){
+  if(!getSites('personal').length){
+    setSites('personal',[
+      {id:uid(),name:'Kasubha Tech',liveUrl:'https://ambitious-forest-00e228d00.7.azurestaticapps.net',status:'In Progress',hosting:'Azure SWA',domainProvider:'Spaceship',githubUrl:'https://github.com/karthikkasubhagit/kasubha',vibeCodingPartner:'Claude',poc:'Karthik',notes:'Main business site. Custom domain kasubha.com — DNS propagating via Spaceship.',type:'personal',at:new Date().toISOString()},
+      {id:uid(),name:'BlueFlute Digital',liveUrl:'https://www.blueflute.co.nz',status:'Completed',hosting:'Azure SWA',domainProvider:'',githubUrl:'',vibeCodingPartner:'Claude',poc:'Karthik',notes:'NZ web design agency site.',type:'personal',at:new Date().toISOString()},
+      {id:uid(),name:'3D-DDS Digital Dental Solutions',liveUrl:'https://lemon-meadow-074d9ad00.7.azurestaticapps.net',status:'Completed',hosting:'Azure SWA',domainProvider:'',githubUrl:'',vibeCodingPartner:'Claude + Codex',poc:'Karthik',notes:'Dental clinic, Hyderabad. Custom domain www.3d-dds.com pending.',type:'personal',at:new Date().toISOString()},
+      {id:uid(),name:'DoctorsPage',liveUrl:'',status:'In Progress',hosting:'GCP Cloud Run',domainProvider:'',githubUrl:'',vibeCodingPartner:'Claude + Codex',poc:'Karthik',notes:'Angular 20 + .NET 8 specialist directory. GCP project: hyd-doctors-directory-724103, Mumbai region. Claude owns .NET backend, Codex owns Angular frontend.',type:'personal',at:new Date().toISOString()},
+      {id:uid(),name:'PDF Utility App',liveUrl:'',status:'Completed',hosting:'GCP Cloud Run',domainProvider:'',githubUrl:'',vibeCodingPartner:'',poc:'Karthik',notes:'Express + pdf-lib + React. GCP project: pdf-utility-500920, Sydney region. Public pilot, no login required.',type:'personal',at:new Date().toISOString()},
+      {id:uid(),name:"Sam's Kitchen Ordering Platform",liveUrl:'',status:'In Progress',hosting:'',domainProvider:'',githubUrl:'',vibeCodingPartner:'Claude + Codex',poc:'Karthik',notes:'NZ restaurant ordering app. Claude owns Angular /frontend, Codex owns .NET /backend. MSW for both sides, one-flag mock→real swap.',type:'personal',at:new Date().toISOString()},
+      {id:uid(),name:'IDC Attendance / Exam PWA',liveUrl:'',status:'In Progress',hosting:'Azure SWA',domainProvider:'',githubUrl:'',vibeCodingPartner:'',poc:'Karthik',notes:'Exam key grading PWA. EXAM_KEY env var for admin. PDF verification, ?v=N cache bumping.',type:'personal',at:new Date().toISOString()},
+    ]);
+  }
+  if(!getSites('ngo').length){
+    setSites('ngo',[
+      {id:uid(),name:'Bhakti Vriksha Hamilton',liveUrl:'https://www.bhaktivrikshahamilton.org',status:'Completed',hosting:'',domainProvider:'',githubUrl:'',vibeCodingPartner:'',poc:'Karthik',notes:'Community devotional group, Hamilton NZ.',type:'ngo',at:new Date().toISOString()},
+      {id:uid(),name:'NityAI',liveUrl:'https://www.nityai.co.nz',status:'Completed',hosting:'',domainProvider:'',githubUrl:'',vibeCodingPartner:'',poc:'Karthik',notes:'AI tools and automation for business, NZ.',type:'ngo',at:new Date().toISOString()},
+      {id:uid(),name:'ISKCON Rise',liveUrl:'https://iskconrise.org.nz',status:'Completed',hosting:'',domainProvider:'',githubUrl:'',vibeCodingPartner:'',poc:'Karthik',notes:'Community and events platform, New Zealand.',type:'ngo',at:new Date().toISOString()},
+      {id:uid(),name:'JOSD',liveUrl:'https://josd.org.nz',status:'Completed',hosting:'',domainProvider:'',githubUrl:'',vibeCodingPartner:'',poc:'Karthik',notes:'Organisation website with member resources, NZ.',type:'ngo',at:new Date().toISOString()},
+    ]);
+  }
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',()=>{
+  buildStrip();
+  seed();
+  ['daily','weekly','monthly','yearly'].forEach(p=>{
+    renderTodos(p);
+    const inp=document.getElementById(`input-${p}`);
+    if(inp)inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addFromInput(p);}});
+  });
+  renderSites('personal');
+  renderSites('ngo');
+});
+
+// ── SERVICE WORKER ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
