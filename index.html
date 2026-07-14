@@ -1019,6 +1019,29 @@ function seed(){
   }
 }
 
+function ensureBalajeeDental(){
+  const sites=getSites('personal');
+  const now=new Date().toISOString();
+  const details={
+    name:'Balajee Dental Studio',
+    liveUrl:'https://balajee-dental-rgytaqfljq-el.a.run.app',
+    status:'In Progress',
+    hosting:'GCP Cloud Run',
+    domainProvider:'',
+    vibeCodingPartner:'Claude + Codex',
+    techStack:'Next.js 16, React 19, TypeScript, Docker, Cloud Run, Firestore',
+    githubUrl:'https://github.com/karthikkasubhagit/balajee-dental',
+    poc:'Karthik',
+    notes:'Dental clinic website for Balajee Dental in Kothapet, Hyderabad. Public Cloud Run service in asia-south1. Appointment requests are stored in Firestore.',
+    comments:'GitHub Actions verifies and deploys main through GCP Workload Identity Federation. Still needed: custom domain and a front-desk email or WhatsApp alert for appointment requests.',
+    type:'personal',
+  };
+  const existing=sites.find(site=>site.name==='Balajee Dental Studio');
+  if(existing){Object.assign(existing,details,{updatedAt:now});setSites('personal',sites);return;}
+  sites.unshift({id:uid(),...details,at:now,updatedAt:now});
+  setSites('personal',sites);
+}
+
 // ── KEYBOARD SHORTCUTS ──
 document.addEventListener('keydown',e=>{
   const active=document.activeElement.tagName;
@@ -1039,6 +1062,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   initTheme();
   buildStrip();
   seed();
+  ensureBalajeeDental();
   ['daily','weekly','monthly','yearly'].forEach(p=>{
     renderTodos(p);
     const inp=document.getElementById(`input-${p}`);
